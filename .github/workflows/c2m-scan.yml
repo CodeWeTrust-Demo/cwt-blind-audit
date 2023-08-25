@@ -1,0 +1,33 @@
+name: C2M Scan
+
+on:
+  workflow_dispatch: # Manual execution
+
+jobs:
+  scan-code:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout stripe-ios
+        uses: actions/checkout@master
+        with:
+          repository: CodeWeTrust-Demo/stripe-ios
+          path: repos/stripe-ios
+          token: ${{ secrets.C2M_REPO_ACCESS_TOKEN }}
+      - name: Checkout redis
+        uses: actions/checkout@master
+        with:
+          repository: CodeWeTrust-Demo/redis
+          path: repos/redis
+          token: ${{ secrets.C2M_REPO_ACCESS_TOKEN }}
+          
+      - name: Download C2M
+        run: wget https://codewetrust-dist.s3-us-west-2.amazonaws.com/CodeWeTrustRunner_linux.tar.gz && tar -xzf CodeWeTrustRunner_linux.tar.gz
+      - name: Run C2M
+        run: for dir in ${PWD}/repos/*; do ./CodeWeTrustRunner $dir --product-name "${dir##*/}" --PipelineSettings:LicenseKey ${{ secrets.CWT_LICENSE_KEY }}; done
+
+      - name: Upload Result
+        uses: actions/upload-artifact@v3
+        with:
+          name: CodeWeTrust.data
+          path: CodeWeTrust.data
